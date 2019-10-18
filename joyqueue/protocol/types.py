@@ -166,9 +166,7 @@ class Schema(AbstractType):
         list=[]
         for i, field in enumerate(self.fields):
           it = item[i]
-          fd = field
-          fbytes=field.encode(it)
-          dit=field.decode( io.BytesIO(fbytes))
+          fbytes = field.encode(it)
           list.append(
               fbytes
           )

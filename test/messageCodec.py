@@ -1,11 +1,12 @@
 
-from joyqueue.protocol.types import Int8,Int32,String
+from joyqueue.protocol.types import Int8, Int32, String
 from joyqueue.protocol.message import Message
 import time
 
 import importlib
 import sys
 import io
+
 importlib.reload(sys)
 
 if __name__ == '__main__':
@@ -25,5 +26,13 @@ if __name__ == '__main__':
                 100, 90, 8, int(now), 1000, 888, 2)
     byteMsg = m.encode()
     receiveMsg = Message.decode(byteMsg)
+
+    print([i for i in range(1, 10)])
     print(m)
     print(receiveMsg)
+    print(receiveMsg.SCHEMA.names)
+    print(receiveMsg.SCHEMA.fields)
+    print('get attrs:')
+    print([getattr(receiveMsg, name) for name in receiveMsg.SCHEMA.names])
+
+

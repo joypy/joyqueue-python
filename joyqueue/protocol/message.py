@@ -37,8 +37,9 @@ class Message(Struct):
     HEADER_SIZE = 40  # length(4),partition(1),index(8),term(4),system_code(1),
                       # priority(1),send_time(8),store_time(4),body_crc(8),flag(1)
 
-    def __init__(self, body, bussiness_id, app, length=-1, partition=-1,
-        index=-1, term=-1, system_code=-1, priority=-1, send_time=-1, store_time=-1, body_crc=-1, flag=-1):
+
+    def __init__(self, body, bussiness_id, app, length=-1, partition=-1, index=-1,
+        term=-1, system_code=-1, priority=-1, send_time=-1, store_time=-1, body_crc=-1, flag=-1):
         assert body is None or isinstance(body, bytes), 'value must be bytes'
         self.length = length
         self.partition = partition
@@ -89,7 +90,7 @@ class Message(Struct):
         remaining = cls.SCHEMAS[0].fields[10:]
         body, bussiness_id, app = [field.decode(data) for field in remaining]
         msg = cls(body, bussiness_id, app, length, partition, index, term,
-                  system_code, priority, send_time, flag)
+                  system_code, priority, send_time, store_time, body_crc, flag)
         return msg
 
     def validate_crc(self):

@@ -14,5 +14,6 @@ class AbstractType(object):
     def decode(cls, data):
         pass
 
-    def __repr__(cls, value):
+    @classmethod
+    def repr(cls, value):
         return repr(value)
