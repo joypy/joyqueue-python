@@ -1,0 +1,65 @@
+# JoyQueue Request command type
+#
+
+# 布尔应答
+BOOLEAN_ACK = -128
+# 存放重试消息
+PUT_RETRY = 6
+# 获取重试消息
+GET_RETRY = 7
+# 获取重试消息应答
+GET_RETRY_ACK = -7
+# 更新重试消息
+UPDATE_RETRY = 8
+# 获取重试条数
+GET_RETRY_COUNT = 9
+# 获取重试条数应答
+GET_RETRY_COUNT_ACK = -9
+#订阅
+SUBSCRIBE = 38
+#订阅响应
+SUBSCRIBE_ACK = 39
+#取消订阅
+UNSUBSCRIBE = 40
+#MQTT 查询所有的topic
+GET_TOPICS = 41
+GET_TOPICS_ACK = -41
+# raft选举投票请求命令
+RAFT_VOTE_REQUEST = 43
+# raft选举投票请求命令响应
+RAFT_VOTE_RESPONSE = -43
+# raft复制添加记录命令
+RAFT_APPEND_ENTRIES_REQUEST = 45
+# raft复制添加记录命令响应
+RAFT_APPEND_ENTRIES_RESPONSE = -45
+# 立即选举请求命令
+RAFT_TIMEOUT_NOW_REQUEST = 46
+# 立即选举响应命令
+RAFT_TIMEOUT_NOW_RESPONSE = -46
+# 查询index请求命令
+CONSUME_INDEX_QUERY_REQUEST = 47
+# 查询index响应命令
+CONSUME_INDEX_QUERY_RESPONSE = -47
+# 保存index请求命令
+CONSUME_INDEX_STORE_REQUEST = 48
+# 保存index响应命令
+CONSUME_INDEX_STORE_RESPONSE = -48
+# 复制消费位置请求命令
+REPLICATE_CONSUME_POS_REQUEST = 49
+# 复制消费位置响应命令
+REPLICATE_CONSUME_POS_RESPONSE = -49
+
+AUTHORIZATION = 63
+#create partitionGroup
+NSR_CREATE_PARTITIONGROUP = 127
+#update partitionGroup
+NSR_UPDATE_PARTITIONGROUP = 126
+#remove partitionGroup
+NSR_REMOVE_PARTITIONGROUP = 125
+#change leader
+NSR_LEADERCHANAGE_PARTITIONGROUP = 124
+# 事务
+# 事务提交
+TRANSACTION_COMMIT_REQUEST = 70
+# 事务回滚
+TRANSACTION_ROLLBACK_REQUEST = 71

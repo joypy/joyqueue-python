@@ -1,12 +1,10 @@
 from __future__ import absolute_import
 
 import io
-import time
-
 from joyqueue.protocol.frame import JoyqueueBytes
 from joyqueue.protocol.struct import Struct
 from joyqueue.protocol.types import (
-    Int8, Int32, Int64, Bytes,String, Schema, AbstractType
+    Int8, Int32, Int64, Bytes, String, Schema, AbstractType
 )
 from joyqueue.util import crc32, WeakMethod
 
@@ -37,7 +35,6 @@ class Message(Struct):
     HEADER_SIZE = 40  # length(4),partition(1),index(8),term(4),system_code(1),
                       # priority(1),send_time(8),store_time(4),body_crc(8),flag(1)
 
-
     def __init__(self, body, bussiness_id, app, length=-1, partition=-1, index=-1,
         term=-1, system_code=-1, priority=-1, send_time=-1, store_time=-1, body_crc=-1, flag=-1):
         assert body is None or isinstance(body, bytes), 'value must be bytes'
@@ -55,20 +52,6 @@ class Message(Struct):
         self.bussiness_id = bussiness_id
         self.app = app
         self.encode = WeakMethod(self._encode_self)
-
-    @property
-    def timestamp_type(self):
-        """0 for CreateTime; 1 for LogAppendTime; None if unsupported.
-
-        Value is determined by broker; produced messages should always set to 0
-        Requires Kafka >= 0.10 / message version >= 1
-        """
-        if self.magic == 0:
-            return None
-        elif self.attributes & self.TIMESTAMP_TYPE_MASK:
-            return 1
-        else:
-            return 0
 
     def _encode_self(self, recalc_crc=True):
         version = 0

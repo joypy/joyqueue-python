@@ -12,9 +12,6 @@ def test_named_tuple():
     topic_partition = TopicPartition('abc_topic', 0)
     assert topic_partition.topic == 'abc_topic'
     assert topic_partition.partition == 0
-    print(topic_partition.topic)
-    print(topic_partition.partition)
-
 
 
 def test_schema():

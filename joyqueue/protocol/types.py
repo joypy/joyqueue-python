@@ -75,7 +75,7 @@ class Int32(AbstractType):
     @classmethod
     def decode(cls, data):
         bytes= data.read(4)
-        return _unpack(cls._unpack,bytes )
+        return _unpack(cls._unpack, bytes)
 
 
 class Int64(AbstractType):
