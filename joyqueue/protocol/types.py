@@ -120,8 +120,77 @@ class String(AbstractType):
             return None
         value = data.read(length)
         if len(value) != length:
-            raise ValueError('Buffer underrun decoding string')
+            raise ValueError('Buffer underflow decoding string')
         return value.decode(self.encoding)
+
+
+class Property(AbstractType):
+    KV_SPLIT = b'='
+    NEWLINE = b'\n'
+    #
+    # def __init__(self):
+    #     self.__dict = defaultdict(None)
+    #     self.__codec = String('utf-8')
+    #     self.encode = WeakMethod(self._encode_self)
+    #     self.__kv_split = Property.KV_SPLIT
+    #     self.__newline = Property.NEWLINE
+    #     self.encode = WeakMethod(self._encode_self)
+    #
+    # def put(self, key, value):
+    #     if key is None or value is None:
+    #         raise ValueError("key or value can't be none ")
+    #     self.__dict[str(key)] = str(value)
+    #
+    # def get(self, key):
+    #     return self.__dict.get(str(key))
+
+
+    @classmethod
+    def encode(cls, dict):
+        length = len(dict)
+        CODEC = String('utf-8')
+        bytelist = []
+        if length > 0:
+            for k, v in dict.items():
+                bytes = b''
+                bytes += CODEC.encode(k)
+                bytes += Property.KV_SPLIT
+                bytes += CODEC.encode(v)
+                bytes += Property.NEWLINE
+                bytelist.append(bytes)
+        bytes = b''.join(bytelist)
+        return Int16.encode(len(bytes))+bytes
+
+    @classmethod
+    def decode(cls, data):
+        if isinstance(data, bytes):
+            data = io.BytesIO(data)
+        pro = cls()
+        len = Int16.decode(data)
+        while len > 0:
+            k, v, length = cls.read_key_value(data)
+            pro.put(k, v)
+            len -= length
+        return pro
+
+    @classmethod
+    def read_key_value(cls, data):
+        length = 6
+
+        key = codec.decode(data)
+        kv_split = data.read(1)
+        if kv_split != Property.KV_SPLIT:
+            raise IOError('wrong format property')
+        value = codec.decode(data)
+        newline = data.read(1)
+        if newline != Property.NEWLINE:
+            raise IOError('wrong format property')
+        length += len(key)
+        length += len(value)
+        return key, value, length
+
+    def __hash__(self):
+        return super().__hash__()
 
 
 class Bytes(AbstractType):
@@ -163,6 +232,7 @@ class Schema(AbstractType):
     def encode(self, item):
         if len(item) != len(self.fields):
             raise ValueError('Item field count does not match Schema')
+
         list=[]
         for i, field in enumerate(self.fields):
           it = item[i]

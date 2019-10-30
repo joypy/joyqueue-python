@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import io
 from joyqueue.protocol.frame import JoyqueueBytes
 from joyqueue.protocol.struct import Struct
+from joyqueue.protocol.property import Property
 from joyqueue.protocol.types import (
     Int8, Int32, Int64, Bytes, String, Schema, AbstractType
 )
@@ -24,6 +25,8 @@ class Message(Struct):
             ('flag', Int8),
             ('body', Bytes),
             ('bussiness_id', String('utf-8')),
+            ('attributes', String('utf-8')),
+            ('extension', Bytes),
             ('app', String('utf-8'))),
     ]
     SCHEMA = SCHEMAS[0]
@@ -35,7 +38,7 @@ class Message(Struct):
     HEADER_SIZE = 40  # length(4),partition(1),index(8),term(4),system_code(1),
                       # priority(1),send_time(8),store_time(4),body_crc(8),flag(1)
 
-    def __init__(self, body, bussiness_id, app, length=-1, partition=-1, index=-1,
+    def __init__(self, body, bussiness_id, attributes, extension,app, length=-1, partition=-1, index=-1,
         term=-1, system_code=-1, priority=-1, send_time=-1, store_time=-1, body_crc=-1, flag=-1):
         assert body is None or isinstance(body, bytes), 'value must be bytes'
         self.length = length
@@ -50,6 +53,8 @@ class Message(Struct):
         self.flag = flag
         self.body = body
         self.bussiness_id = bussiness_id
+        self.attributes = attributes
+        self.extension = extension
         self.app = app
         self.encode = WeakMethod(self._encode_self)
 
@@ -58,7 +63,8 @@ class Message(Struct):
         fields = (self.length, self.partition, self.index, self.term,
                   self.system_code, self.priority, self.send_time,
                   self.store_time, self.body_crc, self.flag,
-                  self.body, self.bussiness_id, self.app)
+                  self.body, self.bussiness_id, self.attributes.encode(),
+                  self.extension, self.app)
         message = Message.SCHEMAS[version].encode(fields)
         return message
 
@@ -71,8 +77,8 @@ class Message(Struct):
         length, partition, index, term, system_code, priority, send_time,  \
         store_time, body_crc, flag = [field.decode(data) for field in base_fields]
         remaining = cls.SCHEMAS[0].fields[10:]
-        body, bussiness_id, app = [field.decode(data) for field in remaining]
-        msg = cls(body, bussiness_id, app, length, partition, index, term,
+        body, bussiness_id, attr, extension, app = [field.decode(data) for field in remaining]
+        msg = cls(body, bussiness_id, Property.decode(attr), extension,app, length, partition, index, term,
                   system_code, priority, send_time, store_time, body_crc, flag)
         return msg
 
