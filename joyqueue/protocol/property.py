@@ -45,9 +45,9 @@ class Property(Struct):
         length = len(data)
         pro = cls()
         if length > 0:
-            properties = data.split('\n')
+            properties = data.split(Property.NEWLINE)
             for p in properties:
-                it = p.split('=')
+                it = p.split(Property.KV_SPLIT)
                 if len(it) == 2:
                     pro.put(it[0], it[1])
                 else:
