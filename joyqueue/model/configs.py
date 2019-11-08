@@ -11,7 +11,7 @@ NAME_SERVER_CONFIG_FILEDS = ('address',
                              'tempMetadataInterval',
                              'updateMetadataThread',
                              'updateMetadataQueueSize')
-DEFAULT_NAME_SERVER_CONFIG = ('nameserver.jmq.jd.local:80',
+DEFAULT_NAME_SERVER_CONFIG = ('localhost:8000',
                               None,
                               None,
                               None,

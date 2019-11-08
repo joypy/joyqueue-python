@@ -19,19 +19,18 @@ class Channel(object):
 class ChannelFactory(object):
     __metaclass__ = abc.ABCMeta
 
+    @defer.inlineCallbacks
     @abc.abstractmethod
     def createChannel(self, host, port):
         pass
 
 
-@defer.inlineCallbacks
 class TwistedChannelFactory(ChannelFactory):
 
     def createChannel(self, host, port):
-        client_factory = TwistedChannelFactory()
+        client_factory = TwistedClientFactory()
         reactor.connectTCP(host, port, client_factory)
-        channel = yield client_factory.deferred
-        return channel
+        return client_factory.deferred
 
 
 class TwistedChannel(Channel, protocol.Protocol):
@@ -43,10 +42,10 @@ class TwistedChannel(Channel, protocol.Protocol):
 
     def write(self, command):
         self.transport.write(command)
-        return self.replyQueue.get()
+        return self.__replyQueue.get()
 
     def dataReceived(self, data):
-        self.replyQueue.put(data)
+        self.__replyQueue.put(data)
 
     def connectionLost(self, reason):
         self.__connected = False
@@ -55,7 +54,13 @@ class TwistedChannel(Channel, protocol.Protocol):
         return self.__connected
 
     def connectionMade(self):
-        self.__connDeferred.callback(self)
+        print('connected')
+        try:
+            self.__connDeferred.callback(self)
+        except defer.AlreadyCalledError:
+            print('already connected')
+            pass
+
         self.__connected = True
 
 
