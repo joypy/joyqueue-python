@@ -1,7 +1,7 @@
 from __future__ import  absolute_import
 
 import struct
-from struct import  error
+from struct import error
 from joyqueue.protocol.abstract import  AbstractType
 import io
 
@@ -176,12 +176,12 @@ class Property(AbstractType):
     @classmethod
     def read_key_value(cls, data):
         length = 6
-
-        key = codec.decode(data)
+        CODEC = String('utf-8')
+        key = CODEC.decode(data)
         kv_split = data.read(1)
         if kv_split != Property.KV_SPLIT:
             raise IOError('wrong format property')
-        value = codec.decode(data)
+        value = CODEC.decode(data)
         newline = data.read(1)
         if newline != Property.NEWLINE:
             raise IOError('wrong format property')
@@ -198,7 +198,7 @@ class Bytes(AbstractType):
     def encode(cls, value):
         try:
           if value is None:
-              return Int32.encode(-1)
+               return Int32.encode(-1)
           else:
                body_len = len(value)
                bytes = Int32.encode(body_len)
@@ -267,7 +267,8 @@ class Array(AbstractType):
         if len(array_of) > 1:
             self.array_of = Schema(*array_of)
         elif len(array_of) == 1 and (isinstance(array_of[0], AbstractType) or
-                                     issubclass(array_of[0], AbstractType)):
+                                     issubclass(array_of[0], AbstractType) or
+                                     isinstance(array_of[0], Schema)):
             self.array_of = array_of[0]
         else:
             raise ValueError('Array instantiated with no array_of type')
@@ -290,3 +291,6 @@ class Array(AbstractType):
         if list_of_items is None:
             return 'NULL'
         return '[' + ', '.join([self.array_of.repr(item) for item in list_of_items]) + ']'
+
+
+

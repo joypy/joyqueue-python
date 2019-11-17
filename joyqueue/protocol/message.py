@@ -13,7 +13,6 @@ from joyqueue.util import crc32, WeakMethod
 class Message(Struct):
     SCHEMAS = [
         Schema(
-            ('length', Int32),
             ('partition', Int8),
             ('index', Int64),
             ('term', Int32),
@@ -60,7 +59,7 @@ class Message(Struct):
 
     def _encode_self(self, recalc_crc=True):
         version = 0
-        fields = (self.length, self.partition, self.index, self.term,
+        fields = (self.partition, self.index, self.term,
                   self.system_code, self.priority, self.send_time,
                   self.store_time, self.body_crc, self.flag,
                   self.body, self.bussiness_id, self.attributes.encode(),

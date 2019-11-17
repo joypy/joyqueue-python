@@ -1,6 +1,5 @@
 
 import abc,time
-import threading
 from joyqueue.network.channel import TwistedChannelFactory
 from joyqueue.model.configs import NameServerConfig
 from twisted.internet import reactor, defer
@@ -13,9 +12,11 @@ class Producer(object):
     def syncSend(self, msg):
         pass
 
+    @abc.abstractmethod
     def asyncSend(self, msg, callback):
         pass
 
+    @abc.abstractmethod
     def start(self):
         pass
 
@@ -29,6 +30,7 @@ class JoyQueueProducer(Producer):
 
     @defer.inlineCallbacks
     def syncSend(self, msg):
+
         response = yield self._channel.write(msg)
         defer.returnValue(response)
 
@@ -45,7 +47,7 @@ class JoyQueueProducer(Producer):
 
 
 def messageListener(msg):
-    print('message repsone:{} '.format(msg))
+    print('message response:{} '.format(msg))
 
 
 @defer.inlineCallbacks
@@ -61,8 +63,8 @@ def main():
     yield producer.start()
     response = yield producer.syncSend('fist msg'.encode('utf-8'))
     print(response)
-    producer.asyncSend('second msg \n'.encode('utf-8'), messageListener)
-    producer.asyncSend('third msg \n'.encode('utf-8'), messageListener)
+    producer.asyncSend('second msg'.encode('utf-8'), messageListener)
+    producer.asyncSend('third msg'.encode('utf-8'), messageListener)
     # wait sync message back
     time.sleep(5)
 

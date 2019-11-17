@@ -1,7 +1,12 @@
 # pytest -s test_codec
 from joyqueue.protocol.message import Message
-from joyqueue.protocol.header import Header
 from joyqueue.protocol.property import Property
+from joyqueue.protocol.metadata import MetadataRequest, MetadataResponse,PartitionGroup
+from joyqueue.protocol.header import JoyQueueHeader
+from joyqueue.protocol.command import Command
+from joyqueue.protocol.types import Array
+from joyqueue.protocol.struct import StructArray
+from joyqueue.protocol.code import JoyQueueCode
 import time
 import importlib
 import sys
@@ -27,6 +32,7 @@ def test_msg_codec():
         pro.put(k, v)
     extension = b'extension'
     flag = 2
+
     m = Message(msg, bussiness_id, pro, extension, app, length, partition, index,
                 term, system_code, priority, int(t), store_time, body_crc, flag)
     byteMsg = m.encode()
@@ -52,7 +58,6 @@ def test_msg_codec():
 
 
 def test_header():
-    length = 10
     magic = ~(0xCAFEBEBE ^ 0xFFFFFFFF)
     version = 2
     identity = 5
@@ -61,21 +66,12 @@ def test_header():
     send_time = int(time.time())
     status = -1
     error = 'no permission'
-    h = Header(length, magic, version, identity, requestId, type, send_time,
+    Header = JoyQueueHeader[0]
+    h = Header(magic, version, identity, requestId, type, send_time,
                status, error)
     hbytes = h.encode()
-    receivedHeader = Header.decode(hbytes)
-
-    print(receivedHeader)
-    assert receivedHeader.length == length
-    assert receivedHeader.magic == magic
-    assert receivedHeader.version == version
-    assert receivedHeader.identity == identity
-    assert receivedHeader.requestId == requestId
-    assert receivedHeader.type == type
-    assert receivedHeader.send_time == send_time
-    assert receivedHeader.status == status
-    assert receivedHeader.error == error
+    receiveHeader = Header.decode(hbytes)
+    assert h == receiveHeader
 
 
 def test_property():
@@ -110,8 +106,67 @@ def test_property_none():
     assert receivedProperty.get('c') is None
 
 
+def test_metadata_request():
+    metadata = MetadataRequest[0]
+    topics = ['aaaa_topic', 'bbb_topic']
+    app = None
+    mt = metadata(topics, app)
+    bytes = mt.encode()
+    receivedMetadata = metadata.decode(bytes)
+    assert receivedMetadata == mt
+
+
+def test_metadata_response():
+    produce_policy = (True, True, True, (('id-1', 2), ('id-2', 8)), ('ip1','ip2'), 1000)
+    consume_policy = (True, True, True, True, True, 1000, 16, True, 100, 5000, ('black-ip-1','black-ip-2'), 100, \
+                      5, 50)
+    partition_groups = ((1, 1000000889, (1,2)), (2, 1000000889, (3, 4)))
+    brokers = ((1000000889, 'broker-id-host', 50088, 'huitian', True, 23),
+               (1000000899, 'broker-id-host_1', 50088, 'huitian1', True, 24))
+    topics = [('topic_a', True, produce_policy, True, consume_policy, 1, partition_groups),
+              ('topic_b', False, None, False, None, 1, partition_groups)]
+    meta_response = MetadataResponse(topics, brokers)
+    bytes = meta_response.encode()
+
+    # Deserialize
+    receive = MetadataResponse.decode(bytes)
+    # print(receive)
+    assert str(meta_response) == str(receive)
+
+
+def test_struct_array():
+    partition_groups = ((1, 1000000889, (1, 2)), (2, 1000000889, (3, 4)))
+    pg = Array(PartitionGroup)
+    bytes = pg.encode(partition_groups)
+    receive = pg.decode(bytes)
+    assert pg == receive
+
+
+def test_command():
+    topics = ['aaaa_topic', 'bbb_topic']
+    app = None
+    m = MetadataRequest(topics, app)
+
+    identity = 5
+    requestId = 78237
+    send_time = int(time.time())
+    error = 'no permission'
+    h = JoyQueueHeader(magic=JoyQueueHeader.MAGIC,
+               version=JoyQueueHeader.VERSION,
+               identity=identity,
+               requestId=requestId,
+               type=m.TYPE,
+               send_time=send_time,
+               status=JoyQueueCode.SUCCESS.value.code,
+               error=error)
+    command = Command(h, m)
+    bytes = command.encode()
+    newCommand = Command.decode(bytes)
+    assert command == newCommand
+
+
 if __name__ == '__main__':
-    test_property_none()
+    test_metadata_response()
 
 
 

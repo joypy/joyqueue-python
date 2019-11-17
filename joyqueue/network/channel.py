@@ -1,7 +1,7 @@
 
 import abc
-from twisted.internet import defer,reactor, protocol
-
+from twisted.internet import defer, reactor, protocol
+from joyqueue.network.receiver import LengthBasedProtocol
 "Abstract channel "
 
 
@@ -33,35 +33,36 @@ class TwistedChannelFactory(ChannelFactory):
         return client_factory.deferred
 
 
-class TwistedChannel(Channel, protocol.Protocol):
+class TwistedChannel(Channel, LengthBasedProtocol):
 
     def __init__(self, connDeferred):
-        self.__replyQueue = defer.DeferredQueue()
-        self.__connDeferred = connDeferred
-        self.__connected = False
+        self._replyQueue = defer.DeferredQueue()
+        self._connDeferred = connDeferred
+        self._connected = False
+        self._length_offset = 4
+        self._max_length = 4096
 
     def write(self, command):
-        self.transport.write(command)
-        return self.__replyQueue.get()
+        self.send(command)
+        return self._replyQueue.get()
 
-    def dataReceived(self, data):
-        self.__replyQueue.put(data)
+    def messageReceived(self, msg):
+        self._replyQueue.put(msg)
 
     def connectionLost(self, reason):
-        self.__connected = False
+        self._connected = False
 
     def connected(self):
-        return self.__connected
+        return self._connected
 
     def connectionMade(self):
         print('connected')
         try:
-            self.__connDeferred.callback(self)
+            self._connDeferred.callback(self)
         except defer.AlreadyCalledError:
             print('already connected')
             pass
-
-        self.__connected = True
+        self._connected = True
 
 
 class TwistedClientFactory(protocol.ClientFactory):

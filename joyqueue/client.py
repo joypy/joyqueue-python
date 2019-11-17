@@ -62,7 +62,6 @@ class EchoFactory(protocol.ClientFactory):
         print("Connection lost, reconnect! {}".format(reason))
         connector.connect()
 
-
 def makeConnection():
     f = EchoFactory()
     reactor.connectTCP("localhost", 8000, f)

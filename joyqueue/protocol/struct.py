@@ -1,11 +1,9 @@
 from __future__ import absolute_import
-
 from io import BytesIO
-
 from joyqueue.protocol.abstract import AbstractType
-from joyqueue.protocol.types import Schema
-
+from joyqueue.protocol.types import Schema, Int16
 from joyqueue.util import WeakMethod
+from collections import Iterable
 
 
 class Struct(AbstractType):
@@ -38,15 +36,20 @@ class Struct(AbstractType):
         return b''.join(bits)
 
     def _encode_self(self):
-        return self.SCHEMA.encode(
-            [self.__dict__[name] for name in self.SCHEMA.names]
-        )
+        return self.SCHEMA.encode([self.__dict__[name] for name in self.SCHEMA.names])
 
     @classmethod
     def decode(cls, data):
         if isinstance(data, bytes):
             data = BytesIO(data)
         return cls(*[field.decode(data) for field in cls.SCHEMA.fields])
+
+    @classmethod
+    def repr(cls, value):
+        if isinstance(value, Iterable):
+            return cls(*value).__repr__()
+        else:
+            return repr(value)
 
     def __repr__(self):
         key_vals = []
@@ -64,6 +67,52 @@ class Struct(AbstractType):
             if self.__dict__[attr] != other.__dict__[attr]:
                 return False
         return True
+
+
+"""
+  Call instance encode, 
+  
+"""
+
+
+class StructArray(AbstractType):
+    def __init__(self, *array_of):
+        if len(array_of) > 1:
+            self.array_of = Schema(*array_of)
+        elif len(array_of) == 1 and (isinstance(array_of[0], AbstractType) or
+                                     issubclass(array_of[0], AbstractType) or
+                                     isinstance(array_of[0], Schema)):
+            self.array_of = array_of[0]
+        else:
+            raise ValueError('Array instantiated with no array_of type')
+
+    """
+      list.append(self.array_of(*item).encode())
+          diff
+      it = self.array_of(*item)
+      list.append(it.encode())
+    """
+    def encode(self, items):
+        if items is None:
+            return Int16.encode(-1)
+        list = []
+        for item in items:
+            it = self.array_of(*item)
+            list.append(it.encode())
+        return b''.join(
+            [Int16.encode(len(items))] + list
+        )
+
+    def decode(self, data):
+        length = Int16.decode(data)
+        if length == -1:
+            return None
+        return [self.array_of.decode(data) for _ in range(length)]
+
+    def repr(self, list_of_items):
+        if list_of_items is None:
+            return 'NULL'
+        return '[' + ', '.join([self.array_of.repr(item) for item in list_of_items]) + ']'
 
 """
 class MetaStruct(type):
