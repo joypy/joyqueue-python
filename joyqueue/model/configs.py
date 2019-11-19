@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-NAME_SERVER_CONFIG_FILEDS = ('address',
+NAME_SERVER_CONFIG_FIELDS = ('address',
                              'region',
                              'namespace',
                              'username',
@@ -11,7 +11,7 @@ NAME_SERVER_CONFIG_FILEDS = ('address',
                              'tempMetadataInterval',
                              'updateMetadataThread',
                              'updateMetadataQueueSize')
-DEFAULT_NAME_SERVER_CONFIG = ('localhost:8000',
+DEFAULT_NAME_SERVER_CONFIG = ('localhost:50088',
                               None,
                               None,
                               None,
@@ -22,7 +22,7 @@ DEFAULT_NAME_SERVER_CONFIG = ('localhost:8000',
                               1000,
                               1,
                               1024)
-NameServerConfig = namedtuple('NameServerConfig', NAME_SERVER_CONFIG_FILEDS)
+NameServerConfig = namedtuple('NameServerConfig', NAME_SERVER_CONFIG_FIELDS)
 NameServerConfig.__new__.__defaults__ = DEFAULT_NAME_SERVER_CONFIG*len(DEFAULT_NAME_SERVER_CONFIG)
 
 

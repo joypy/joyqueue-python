@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import abc
 from io import BytesIO
 from joyqueue.protocol.abstract import AbstractType
 from joyqueue.protocol.types import Schema, Int16
@@ -114,10 +115,47 @@ class StructArray(AbstractType):
             return 'NULL'
         return '[' + ', '.join([self.array_of.repr(item) for item in list_of_items]) + ']'
 
-"""
-class MetaStruct(type):
-    def __new__(cls, clsname, bases, dct):
-        nt = namedtuple(clsname, [name for (name, _) in dct['SCHEMA']])
-        bases = tuple([Struct, nt] + list(bases))
-        return super(MetaStruct, cls).__new__(cls, clsname, bases, dct)
-"""
+
+class Model(object):
+    __metaclass__ = abc.ABCMeta
+    SCHEMA = Schema()
+
+    def __init__(self, *args, **kwargs):
+        if len(args) == len(self.SCHEMA.fields):
+            for i, name in enumerate(self.SCHEMA.names):
+                self.__dict__[name] = args[i]
+        elif len(args) > 0:
+            raise ValueError('Args must be empty or mirror schema')
+        else:
+            for name in self.SCHEMA.names:
+                self.__dict__[name] = kwargs.pop(name, None)
+            if kwargs:
+                raise ValueError('Keyword(s) not in schema %s: %s'
+                                 % (list(self.SCHEMA.names),
+                                    ', '.join(kwargs.keys())))
+
+    def get(self, property_key):
+        return self.__dict__[property_key]
+
+    def set(self, key, value):
+        self.__dict__[key] = value
+
+    @abc.abstractproperty
+    def TYPE(self):
+        """
+        Response type
+        """
+        pass
+
+    @abc.abstractproperty
+    def SCHEMA(self):
+        """
+        Serialize and Deserialize fields and types
+        """
+        pass
+
+    def __repr__(self):
+        key_vals = []
+        for name in self.SCHEMA.names:
+            key_vals.append('%s=%s' % (name, self.__dict__[name]))
+        return self.__class__.__name__ + '(' + ', '.join(key_vals) + ')'

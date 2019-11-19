@@ -62,3 +62,5 @@ class Response(Struct):
         Serialize and Deserialize fields and types
         """
         pass
+
+

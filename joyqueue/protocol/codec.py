@@ -1,7 +1,8 @@
 
 from collections import defaultdict
 from joyqueue.protocol.interface import Struct
-from joyqueue.protocol.metadata import MetadataRequest
+from joyqueue.protocol.metadata import (MetadataRequest, MetadataResponse,
+                                        ConnectionRequest,ConnectionResponse)
 
 
 class ResponseDecodeFactory:
@@ -12,6 +13,9 @@ class ResponseDecodeFactory:
 
     def _init(self):
         self.add(MetadataRequest)
+        self.add(MetadataResponse)
+        self.add(ConnectionRequest)
+        self.add(ConnectionResponse)
 
     def get(self, type):
         return self._map.get(type)

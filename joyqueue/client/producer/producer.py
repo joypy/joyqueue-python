@@ -1,30 +1,15 @@
 
-import abc,time
+import time
 from joyqueue.network.channel import TwistedChannelFactory
 from joyqueue.model.configs import NameServerConfig
 from twisted.internet import reactor, defer
-
-
-class Producer(object):
-    __metaclass__ = abc.ABCMeta
-
-    @abc.abstractmethod
-    def syncSend(self, msg):
-        pass
-
-    @abc.abstractmethod
-    def asyncSend(self, msg, callback):
-        pass
-
-    @abc.abstractmethod
-    def start(self):
-        pass
+from joyqueue.client.producer.interface import Producer
 
 
 class JoyQueueProducer(Producer):
 
-    def __init__(self, config):
-        self._config = config
+    def __init__(self, clusterMetadataManager):
+        self._clusterMetadataManager = clusterMetadataManager
         self._channelFactory = TwistedChannelFactory()
         self._channel = None
 

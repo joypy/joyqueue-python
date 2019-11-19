@@ -4,7 +4,7 @@ from joyqueue.protocol.property import Property
 from joyqueue.protocol.metadata import MetadataRequest, MetadataResponse,PartitionGroup
 from joyqueue.protocol.header import JoyQueueHeader
 from joyqueue.protocol.command import Command
-from joyqueue.protocol.types import Array
+from joyqueue.protocol.types import Array,String
 from joyqueue.protocol.struct import StructArray
 from joyqueue.protocol.code import JoyQueueCode
 import time
@@ -12,6 +12,11 @@ import importlib
 import sys
 importlib.reload(sys)
 
+
+def test_array_string():
+    topics = ['test_topic']
+    bytes=Array(String()).encode(topics)
+    print(bytes)
 
 def test_msg_codec():
     msg = b'abncdfasdf'
@@ -166,7 +171,7 @@ def test_command():
 
 
 if __name__ == '__main__':
-    test_metadata_response()
+    test_array_string()
 
 
 

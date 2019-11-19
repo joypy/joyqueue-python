@@ -1,7 +1,6 @@
 
 import abc
-
-"Real network layer connection"
+"Real Application layer connection interface"
 
 
 class ChannelFactory(object):
@@ -31,16 +30,3 @@ class Transport(object):
         pass
 
 
-class ClientTransport(Transport):
-
-    def __init__(self, channel):
-        self.__channel = channel
-
-    def oneway(self, command, timeout=None):
-        pass
-
-    def async(self, command, callback, timeout=None):
-        pass
-
-    def sync(self, command, timeout=None):
-        pass

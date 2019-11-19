@@ -1,8 +1,13 @@
 
 import abc
+import logging
 from twisted.internet import defer, reactor, protocol
 from joyqueue.network.receiver import LengthBasedProtocol
-"Abstract channel "
+from joyqueue.protocol.command import Command
+
+log = logging.getLogger(__name__)
+
+"Abstract channel: network connection "
 
 
 class Channel(object):
@@ -12,6 +17,7 @@ class Channel(object):
     def write(self, command):
         pass
 
+    @abc.abstractmethod
     def connected(self):
         pass
 
@@ -43,11 +49,13 @@ class TwistedChannel(Channel, LengthBasedProtocol):
         self._max_length = 4096
 
     def write(self, command):
-        self.send(command)
+        self.send(command.encode())
         return self._replyQueue.get()
 
     def messageReceived(self, msg):
-        self._replyQueue.put(msg)
+        # parser response
+        response = Command.decode(msg)
+        self._replyQueue.put(response)
 
     def connectionLost(self, reason):
         self._connected = False
@@ -56,11 +64,11 @@ class TwistedChannel(Channel, LengthBasedProtocol):
         return self._connected
 
     def connectionMade(self):
-        print('connected')
+        log.info('connected')
         try:
             self._connDeferred.callback(self)
         except defer.AlreadyCalledError:
-            print('already connected')
+            log.warning('already connected')
             pass
         self._connected = True
 
@@ -71,15 +79,15 @@ class TwistedClientFactory(protocol.ClientFactory):
         self.deferred = defer.Deferred()
 
     def clientConnectionFailed(self, connector, reason):
-        print("Connection failed - goodbye!")
+        log.info("Connection failed - goodbye!")
         reactor.stop()
 
     def buildProtocol(self, addr):
-        print('Connected')
+        log.info('Connected')
         p = self.protocol(self.deferred)
         p.factory = self
         return p
 
     def clientConnectionLost(self, connector, reason):
-        print("Connection lost, reconnect! {}".format(reason))
+        log.info("Connection lost, reconnect! {}".format(reason))
         connector.connect()

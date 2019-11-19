@@ -124,6 +124,26 @@ class String(AbstractType):
         return value.decode(self.encoding)
 
 
+class ByteString(AbstractType):
+    def __init__(self, encoding='utf-8'):
+        self.encoding = encoding
+
+    def encode(self, value):
+        if value is None:
+            return Int8.encode(-1)
+        value = str(value).encode(self.encoding)
+        return Int8.encode(len(value)) + value
+
+    def decode(self, data):
+        length = Int8.decode(data)
+        if length < 0:
+            return None
+        value = data.read(length)
+        if len(value) != length:
+            raise ValueError('Buffer underflow decoding string')
+        return value.decode(self.encoding)
+
+
 class Property(AbstractType):
     KV_SPLIT = b'='
     NEWLINE = b'\n'
@@ -283,7 +303,7 @@ class Array(AbstractType):
 
     def decode(self, data):
         length = Int16.decode(data)
-        if length == -1:
+        if length <= 0:
             return None
         return [self.array_of.decode(data) for _ in range(length)]
 

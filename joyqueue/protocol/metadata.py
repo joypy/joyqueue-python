@@ -1,10 +1,11 @@
 from joyqueue.protocol.interface import Request, Response
-from joyqueue.protocol.types import Schema, Array, String, Int16, Int32, Boolean
-from joyqueue.protocol.command_key import FETCH_CLUSTER_REQUEST, FETCH_CLUSTER_RESPONSE
+from joyqueue.protocol.types import Schema, Array, String, ByteString, Int8, Int16, Int32, Int64, Boolean
+from joyqueue.protocol.command_key import (FETCH_CLUSTER_REQUEST, FETCH_CLUSTER_RESPONSE,\
+                                           ADD_CONNECTION_REQUEST,ADD_CONNECTION_RESPONSE)
 from io import BytesIO
 from joyqueue.util import WeakMethod
-
 UTF8String = String('utf-8')
+UTF8ByteString = ByteString('utf-8')
 
 
 class MetadataRequest(Request):
@@ -49,29 +50,31 @@ class ConsumerPolicy(Response):
 
 class PartitionGroup(Response):
      SCHEMA = Schema(('id', Int32),
-                      ('leader', Int32),
-                      ('partitions', Array(Int32)))
+                     ('leader', Int32),
+                     ('partitions', Array(Int16)))
      TYPE = 'Partition Group'
 
 
 class Topic(Response):
-    SCHEMA = Schema(('code', UTF8String),
+    SCHEMA = Schema(('topicCode', UTF8String),
                     ('hasProducerPolicy', Boolean),
                     ('producerPolicy', ProducerPolicy),
                     ('hasConsumerPolicy', Boolean),
                     ('consumerPolicy', ConsumerPolicy),
-                    ('type', Int32),
-                    ('partitionGroups', Array(PartitionGroup)))
+                    ('type', Int8),
+                    ('partitionGroups', Array(PartitionGroup)),
+                    ('code', Int32))
     TYPE = 'Topic'
 
-    def __init__(self, code, hasProducerPolicy, producerPolicy,hasConsumerPolicy,consumerPolicy,type,partitionGroups):
-        self.code = code
+    def __init__(self, topic_code, hasProducerPolicy, producerPolicy,hasConsumerPolicy,consumerPolicy,type,partitionGroups,code):
+        self.topicCode = topic_code
         self.hasProducerPolicy = hasProducerPolicy
         self.producerPolicy = producerPolicy
         self.hasConsumerPolicy = hasConsumerPolicy
         self.consumerPolicy = consumerPolicy
         self.type = type
         self.partitionGroups = partitionGroups
+        self.code = code
         self.encode = WeakMethod(self._encode_self)
 
     def _encode_self(self):
@@ -99,7 +102,7 @@ class Topic(Response):
         if isinstance(data, bytes):
             data = BytesIO(data)
         base_fields = cls.SCHEMA.fields[0:2]
-        code, has_producer_policy = [f.decode(data) for f in base_fields]
+        topic_code, has_producer_policy = [f.decode(data) for f in base_fields]
         producerPolicy = None
         consumerPolicy = None
         if has_producer_policy:
@@ -107,8 +110,9 @@ class Topic(Response):
         has_consumer_policy = cls.SCHEMA.fields[3].decode(data)
         if has_consumer_policy:
             consumerPolicy = cls.SCHEMA.fields[4].decode(data)
-        type, partitionGroups = [f.decode(data) for f in cls.SCHEMA.fields[5:]]
-        return cls(code, has_producer_policy, producerPolicy, has_consumer_policy, consumerPolicy, type, partitionGroups)
+        type, partitionGroups, code = [f.decode(data) for f in cls.SCHEMA.fields[5:]]
+        return cls(topic_code, has_producer_policy, producerPolicy, has_consumer_policy,
+                   consumerPolicy, type, partitionGroups, code)
 
 
 class Broker(Response):
@@ -117,7 +121,9 @@ class Broker(Response):
                     ('port', Int32),
                     ('dataCenter', UTF8String),
                     ('nearby', Boolean),
-                    ('weight', Int32))
+                    ('weight', Int32),
+                    ('systemCode', Int32),
+                    ('permission', Int32))
 
     TYPE = 'Broker'
 
@@ -126,5 +132,26 @@ class MetadataResponse(Response):
     SCHEMA = Schema(('topics', Array(Topic)),
                     ('brokers', Array(Broker)))
     TYPE = FETCH_CLUSTER_RESPONSE
+
+
+class ConnectionRequest(Request):
+    SCHEMA = Schema(('username', UTF8ByteString),
+                    ('password', UTF8ByteString),
+                    ('app', UTF8ByteString),
+                    ('token', UTF8ByteString),
+                    ('region', UTF8ByteString),
+                    ('namespace', UTF8ByteString),
+                    ('language', Int8),
+                    ('version', UTF8ByteString),
+                    ('ip', UTF8ByteString),
+                    ('time', Int64),
+                    ('sequence', Int64))
+    TYPE = ADD_CONNECTION_REQUEST
+
+
+class ConnectionResponse(Response):
+    SCHEMA = Schema(('connectionId', UTF8ByteString),
+                    ('notification', UTF8String))
+    TYPE = ADD_CONNECTION_RESPONSE
 
 

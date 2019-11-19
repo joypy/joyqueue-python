@@ -1,10 +1,17 @@
 
-import io
+import io,logging
 from joyqueue.protocol.struct import Struct
 from joyqueue.util import WeakMethod
 from joyqueue.protocol.codec import ResponseDecodeFactory
 from joyqueue.protocol.header import JoyQueueHeader
 from joyqueue.protocol.version import Version
+log = logging.getLogger(__name__)
+
+"""
+  Header
+  Body
+  
+"""
 
 
 class Command(Struct):
@@ -28,11 +35,17 @@ class Command(Struct):
     def decode(cls, data):
         if isinstance(data, bytes):
             data = io.BytesIO(data)
-        header = Command.HEADER.decode(data)
+        header = cls.HEADER.decode(data)
         if header.version != header.VERSION:
             raise UnexpectedVersionError('version inconsistency')
-        decoder = Command.CODEC_FACTORY.get(header.type)
-        body = decoder.decode(data)
+        body_type = header.type
+        decoder = cls.CODEC_FACTORY.get(body_type)
+        if decoder is not None:
+            body = decoder.decode(data)
+        else:
+            log.error('{} decoder missing!'.format(body_type))
+            # raw body
+            body = data
         return cls(header, body)
 
     def __repr__(self):
