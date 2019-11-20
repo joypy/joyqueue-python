@@ -19,6 +19,8 @@ def test_model():
     print(application.get('version'))
     print(application)
 
+def test_struct():
+    pass
 
 if __name__ == '__main__':
     test_model()

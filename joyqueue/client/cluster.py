@@ -2,11 +2,13 @@
 from collections import defaultdict
 from twisted.internet import reactor, defer
 from joyqueue.model.configs import NameServerConfig
-from joyqueue.model.models import Application
+from joyqueue.model.models import Application,PartitionMetadata
 from joyqueue.protocol.metadata import MetadataRequest
 from joyqueue.protocol.header import JoyQueueHeader
 from joyqueue.protocol.command import Command
 import logging, time
+from joyqueue.exception.errors import TopicNotExist,NoAvailableBroker
+
 from joyqueue.client.client import DefaultClientManager,DefaultAuthClientTransport
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -30,8 +32,31 @@ class ClusterMetadataManager(object):
         # auth
         yield self._auth_client.auth(self._cluster_config['app'])
 
-    def metadata(self, topic):
-        pass
+    def metadata(self, topic, app):
+        if self._metadata[topic]:
+            return self._metadata[topic]
+        else:
+            return self.updateMetadata(topic, app)
+
+    def partitionMetadata(self, topic, app):
+        metadata = self.metadata(topic, app)
+        if metadata is None:
+            raise TopicNotExist('topic not exist')
+        topics = metadata.topics
+        brokers = metadata.brokers
+        brokers_map = defaultdict(None)
+        if brokers is None:
+            raise NoAvailableBroker('no available brokers')
+        else:
+            for b in brokers:
+                brokers_map[b.id] = b
+        partitions = []
+        for t in topics:
+            for pg in t.partitionGroups:
+                broker = brokers_map.get(pg.leader)
+                for p in pg.partitions:
+                    partitions.append(PartitionMetadata(p, pg.id, t.topicCode, broker))
+        return partitions
 
     @defer.inlineCallbacks
     def updateMetadata(self, topic, app):
@@ -42,6 +67,7 @@ class ClusterMetadataManager(object):
         response = yield self._client.sync(command)
         self._metadata[topic] = response
         log.info(response)
+        return response
 
 
 def defaultHeader(request):

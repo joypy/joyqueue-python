@@ -1,7 +1,7 @@
 from collections import namedtuple
-from joyqueue.protocol.types import Schema, String, Int8, Int64
+from joyqueue.protocol.types import Schema, String, Int8, Int16, Int32,Int64
 from joyqueue.protocol.struct import Model
-
+from joyqueue.protocol.metadata import Broker
 MetadataRequest = namedtuple('MetadataRequest',
                              ['topics', 'app'])
 
@@ -22,4 +22,12 @@ class Application(Model):
                     ('ip', UTF8String),
                     ('time', Int64),
                     ('sequence', Int64))
+    TYPE = 'Application'
+
+
+class PartitionMetadata(Model):
+    SCHEMA = Schema(('id', Int16),
+                    ('partitionGroupId', Int32),
+                    ('topic', UTF8String),
+                    ('leader', Broker))
     TYPE = 'Application'

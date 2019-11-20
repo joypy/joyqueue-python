@@ -5,7 +5,6 @@ from joyqueue.protocol.metadata import MetadataRequest, MetadataResponse,Partiti
 from joyqueue.protocol.header import JoyQueueHeader
 from joyqueue.protocol.command import Command
 from joyqueue.protocol.types import Array,String
-from joyqueue.protocol.struct import StructArray
 from joyqueue.protocol.code import JoyQueueCode
 import time
 import importlib
@@ -112,10 +111,14 @@ def test_property_none():
 
 
 def test_metadata_request():
-    metadata = MetadataRequest[0]
+    metadata = MetadataRequest
     topics = ['aaaa_topic', 'bbb_topic']
     app = None
     mt = metadata(topics, app)
+    mt.apps = ['aa', 'bb']
+    print(mt.apps)
+    print(mt.__dict__['topics'])
+    print(mt.topics)
     bytes = mt.encode()
     receivedMetadata = metadata.decode(bytes)
     assert receivedMetadata == mt
@@ -171,7 +174,7 @@ def test_command():
 
 
 if __name__ == '__main__':
-    test_array_string()
+    test_metadata_request()
 
 
 
