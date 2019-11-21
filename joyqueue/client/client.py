@@ -6,6 +6,7 @@ from joyqueue.client.interface import ClientFactory, ClientManager, AuthClientTr
 from joyqueue.protocol.metadata import ConnectionRequest
 from joyqueue.protocol.header import JoyQueueHeader
 from joyqueue.protocol.command import Command
+from joyqueue.exception.errors import AuthApplicationError
 import time, logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -63,7 +64,7 @@ class DefaultAuthClientTransport(AuthClientTransport):
             return False
 
     def getClient(self):
-        pass
+        return self._client
 
 
 class DefaultClientFactory(ClientFactory):
@@ -82,6 +83,7 @@ class DefaultClientManager(ClientManager):
     def __init__(self):
         self._clientFactory = DefaultClientFactory()
         self._clients = defaultdict(None)
+        self._auth_clients = defaultdict(None)
 
     def getClient(self, ip, port):
         client_key = ip+':'+str(port)
@@ -93,6 +95,21 @@ class DefaultClientManager(ClientManager):
             return client
         except Exception as ex:
             print(ex)
+
+    @defer.inlineCallbacks
+    def getAuthClient(self, ip, port, app_config):
+        app = app_config.get('app') + '.' + app_config.get('namespace')
+        auth_client_key = ip + ':' + str(port) + ':' + app
+        auth_client = self._auth_clients.get(auth_client_key)
+        if auth_client is None:
+            client = yield self.getClient(ip, port)
+            auth_client = DefaultAuthClientTransport(client)
+            result = yield auth_client.auth(app_config)
+            if result:
+                self._auth_clients[auth_client_key] = auth_client
+            else:
+                raise AuthApplicationError('auth application:{} failed'.format(app))
+        return auth_client.getClient()
 
     def releaseClient(self, ip, port):
         client_key = ip+':'+port

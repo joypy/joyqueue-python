@@ -53,8 +53,7 @@ class JoyQueueHeader(Header):
         send_time = int(time.time())
         status = 0
         error = None
-        return JoyQueueHeader(magic, version, identity, requestId, type, send_time,
-                          status, error)
+        return JoyQueueHeader(magic, version, identity, requestId, type, send_time, status, error)
 
 
 

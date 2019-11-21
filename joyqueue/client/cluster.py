@@ -7,7 +7,7 @@ from joyqueue.protocol.metadata import MetadataRequest
 from joyqueue.protocol.header import JoyQueueHeader
 from joyqueue.protocol.command import Command
 import logging, time
-from joyqueue.exception.errors import TopicNotExist,NoAvailableBroker
+from joyqueue.exception.errors import TopicNotExist,NoAvailableBroker,NoAvailablePartition
 
 from joyqueue.client.client import DefaultClientManager,DefaultAuthClientTransport
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -21,6 +21,7 @@ class ClusterMetadataManager(object):
         self._metadata = defaultdict(None)
         self._client_manager = client_manager
         self._client = None
+        self._auth_clients = defaultdict(None)
         self._auth_client = None
 
     @defer.inlineCallbacks
@@ -29,17 +30,20 @@ class ClusterMetadataManager(object):
                                 self._cluster_config.get('host'),
                                 self._cluster_config.get('port'))
         self._auth_client = DefaultAuthClientTransport(self._client)
-        # auth
-        yield self._auth_client.auth(self._cluster_config['app'])
+        # # auth
 
+    @defer.inlineCallbacks
     def metadata(self, topic, app):
-        if self._metadata[topic]:
+        if self._metadata.get(topic):
             return self._metadata[topic]
         else:
-            return self.updateMetadata(topic, app)
+            meta = yield self.updateMetadata(topic, app)
+            # self._metadata[topic] = meta
+            return meta
 
-    def partitionMetadata(self, topic, app):
-        metadata = self.metadata(topic, app)
+    @defer.inlineCallbacks
+    def topicMetadata(self, topic, app):
+        metadata = yield self.metadata(topic, app)
         if metadata is None:
             raise TopicNotExist('topic not exist')
         topics = metadata.topics
@@ -59,15 +63,33 @@ class ClusterMetadataManager(object):
         return partitions
 
     @defer.inlineCallbacks
+    def topicPartitionMetadata(self, topic, partition,app):
+        topicMetadata = yield self.topicMetadata(topic, app)
+        for p in topicMetadata:
+            if p.get('id') == partition:
+                return p
+        raise NoAvailablePartition('partition not exist')
+
+    @defer.inlineCallbacks
     def updateMetadata(self, topic, app):
         topics = [topic]
         request = MetadataRequest(topics, app)
         header = defaultHeader(request)
         command = Command(header, request)
+        client = self._auth_clients.get(app)
+        if client is None:
+            app_config = self._cluster_config.get('app')
+            yield self._auth_client.auth(app_config)
+            client = self._auth_client.getClient()
+            self._auth_clients[app] = client
         response = yield self._client.sync(command)
-        self._metadata[topic] = response
+        re_header = response._header
+        if re_header.status:
+            log.info('Get Cluster metadata  failed,{}'.format(re_header.error))
+            return None
+        self._metadata[topic] = response._body
         log.info(response)
-        return response
+        return self._metadata.get(topic)
 
 
 def defaultHeader(request):
@@ -110,6 +132,7 @@ def main():
     host = hostAndPort[0]
     port = int(hostAndPort[1])
     application = default_application()
+    application.set()
     producerConfig = {'host': host, 'port': port, 'app': application}
     client_manager = DefaultClientManager()
     cluster_metadata_manager = ClusterMetadataManager(producerConfig, client_manager)

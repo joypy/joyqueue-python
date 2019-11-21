@@ -1,6 +1,5 @@
 
 import abc
-from joyqueue.network.transport import Transport
 
 
 class ClientFactory(object):

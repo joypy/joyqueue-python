@@ -42,16 +42,18 @@ class Property(Struct):
 
     @classmethod
     def decode(cls, data):
-        length = len(data)
-        pro = cls()
-        if length > 0:
-            properties = data.split(Property.NEWLINE)
-            for p in properties:
-                it = p.split(Property.KV_SPLIT)
-                if len(it) == 2:
-                    pro.put(it[0], it[1])
-                else:
-                    raise IOError('wrong property string')
+        pro = None
+        if data is not None:
+            length = len(data)
+            if length > 0:
+                pro = cls()
+                properties = data.split(Property.NEWLINE)
+                for p in properties:
+                    it = p.split(Property.KV_SPLIT)
+                    if len(it) == 2:
+                        pro.put(it[0], it[1])
+                    else:
+                        raise IOError('wrong property string')
         return pro
 
     def __repr__(self):

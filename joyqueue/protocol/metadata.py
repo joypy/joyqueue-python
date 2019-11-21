@@ -1,7 +1,9 @@
 from joyqueue.protocol.interface import Request, Response
 from joyqueue.protocol.types import Schema, Array, String, ByteString, Int8, Int16, Int32, Int64, Boolean
 from joyqueue.protocol.command_key import (FETCH_CLUSTER_REQUEST, FETCH_CLUSTER_RESPONSE,\
-                                           ADD_CONNECTION_REQUEST,ADD_CONNECTION_RESPONSE)
+                                           ADD_CONNECTION_REQUEST, ADD_CONNECTION_RESPONSE,
+                                           ADD_PRODUCER_REQUEST, ADD_PRODUCER_RESPONSE,
+                                           ADD_CONSUMER_REQUEST, ADD_CONSUMER_RESPONSE)
 from io import BytesIO
 from joyqueue.util import WeakMethod
 UTF8String = String('utf-8')
@@ -153,5 +155,44 @@ class ConnectionResponse(Response):
     SCHEMA = Schema(('connectionId', UTF8ByteString),
                     ('notification', UTF8String))
     TYPE = ADD_CONNECTION_RESPONSE
+
+
+class ProducerRequest(Request):
+    SCHEMA = Schema(('topics', Array(UTF8String)),
+                    ('app', UTF8String),
+                    ('sequence', Int64))
+
+    TYPE = ADD_PRODUCER_REQUEST
+
+
+class ProducerId(Response):
+    SCHEMA = Schema(('topic', UTF8String),
+                    ('producerId', UTF8String))
+    TYPE = 'Producer id'
+
+
+class ProducerResponse(Response):
+    SCHEMA = Schema(('producerIds', Array(ProducerId)))
+    TYPE = ADD_PRODUCER_RESPONSE
+
+
+class ConsumerId(Response):
+    SCHEMA = Schema(('topic', UTF8String),
+                    ('consumerId', UTF8String))
+    TYPE = 'Consumer id'
+
+
+class ConsumerRequest(Request):
+    SCHEMA = Schema(('topics', Array(UTF8String)),
+                    ('app', UTF8String),
+                    ('sequence', Int64))
+    TYPE = ADD_CONSUMER_REQUEST
+
+
+class ConsumerResponse(Response):
+    SCHEMA = Schema(('consumerIds', Array(ConsumerId)))
+    TYPE = ADD_CONSUMER_RESPONSE
+
+
 
 

@@ -16,3 +16,8 @@ class NoAvailablePartition(Exception):
     """
     Partition not available
     """
+
+class AuthApplicationError(Exception):
+    """
+    Auth application error
+    """
