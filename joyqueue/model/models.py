@@ -31,3 +31,9 @@ class PartitionMetadata(Model):
                     ('topic', UTF8String),
                     ('leader', Broker))
     TYPE = 'Application'
+
+
+class ServerConfig(Model):
+    SCHEMA = Schema(('host', UTF8String),
+                    ('port', Int16))
+    TYPE = 'Server config'
